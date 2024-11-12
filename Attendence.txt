@@ -1,0 +1,14 @@
+emp000asad grd000usman 4/11/2024 Monday 8:0 17:0
+emp001ahmad grd000usman 4/11/2024 Monday 8:0 16:0
+emp003fatima grd000usman 4/11/2024 Monday 9:0 13:0
+emp000asad grd001atif 5/11/2024 Tuesday 8:0 17:0
+emp001ahmad grd001atif 5/11/2024 Tuesday 8:0 17:0
+emp003fatima grd001atif 5/11/2024 Tuesday 8:0 17:0
+emp001ahmad grd000usman 6/11/2024 Wednesday 9:0 18:0
+emp000asad grd000usman 6/11/2024 Wednesday 9:0 17:0
+emp003fatima grd000usman 6/11/2024 Wednesday 9:0 17:0
+emp000asad grd002farooq 7/11/2024 Thursday 9:0 17:0
+emp001ahmad grd002farooq 7/11/2024 Thursday 9:0 17:0
+emp003fatima grd001atif 8/11/2024 Friday 9:0 17:0
+emp001ahmad grd001atif 8/11/2024 Friday 9:0 17:0
+emp000asad grd001atif 8/11/2024 Friday 9:0 17:0
