@@ -1,7 +1,8 @@
 #include<iostream>
 #include<fstream>
 #include<vector>
-#include "attendence.h"
+#include<algorithm>
+#include "attendance.h"
 
 using namespace std;
 
@@ -15,74 +16,54 @@ class reportInterfaceEmployee;
 int validInput(int, int);
 bool login();
 
-// Report Class implementation
+// Report class implementation to generate reports of employee's attendance and leaves
 class report
 {
 protected:
-	vector<attendance> records;
-	void readRecords(string emp) {
+	vector<attendance> attendanceRecord;
+
+	// Function to read attendance record from file and store it in attendance record
+	void readAttendanceRecords(string emp) {
 		bool flag = false;
 		string temp;
-		while (!flag) {
-			ifstream read("Employee.txt");
-			if (read.is_open()) {
-				string fileuserid;
-				while (getline(read, temp) and !flag) {
-					stringstream ss(temp);
-					ss >> fileuserid;
-					if (fileuserid == emp)
-						flag = true;
-				}
+		ifstream read("Attendence.txt");
+		if (read.is_open()) {
+			attendance recordFromFile;
+			while (!read.eof())
+			{
+				read >> recordFromFile;
+				if (recordFromFile.getEmpID() == emp)		// Read record from file and check if record is of given object
+					attendanceRecord.push_back(recordFromFile);
 			}
-			else
-				cout << "File not found!" << endl;
 		}
-		if (!flag)
-			cout << "Employee not fuond!" << endl;
-		else {
-			ifstream read("Attendence.txt");
-			if (read.is_open()) {
-				string fileuserid;
-				string guardid;
-				string day;
-				string date;
-				string entry;
-				string exit;
-				while (getline(read, temp)) {
-					stringstream ss(temp);
-					ss >> fileuserid;
-					if (fileuserid == emp) {
-						ss >> guardid;
-						ss >> date;
-						ss >> day;
-						ss >> entry;
-						ss >> exit;
-						records.push_back(attendance::attendance(fileuserid, guardid, Date::convert(date), day, Time::convert(entry), Time::convert(exit)));
-					}
-				}
-			}
-			else
-				cout << "File not found!" << endl;
-		}
+		else
+			cout << "File not found!" << endl;	
 	}
-	void viewRecords() {
+
+	// Function to view attendance record of an employee
+	void viewEmpAttendance() {
 		system("CLS");
-		if (records.empty())
+		if (attendanceRecord.empty())			// If no records are found
 			cout << "No records found!" << endl;
 		else {
-			for (auto ite : records)
-				ite.printRecord();
+			for (auto ite : attendanceRecord)
+				cout << ite;
 		}
 	}
 };
 
+// Interface of report class to restrict employee to specific number of functions
 class reportInterfaceEmployee : public report {
 public:
+	// Deafult constructor
 	reportInterfaceEmployee(string emp) {
-		readRecords(emp);
+		readAttendanceRecords(emp);									// Read attendance records of given employee in vector of attendance
+		sort(attendanceRecord.begin(), attendanceRecord.end());		// Sort attendance records according to date to record
 	}
+
+	// Function to view employee attendance records
 	void viewEmpAttendance() {
-		report::viewRecords();
+		report::viewEmpAttendance();
 		system("Pause");
 	}
 };
@@ -154,7 +135,7 @@ public:
 };
 
 class Guard : public user {
-	attendanceInterfaceGuard Interface;
+	attendanceService* Interface;
 
 	void getDetails() {
 		system("CLS");
@@ -165,11 +146,11 @@ class Guard : public user {
 	}
 
 	void markAttendence() {
-		Interface.markAttendance(this->id);
+		Interface->markAttendance();
 	}
 public:
 	Guard(string id, string firstname, string lastname) :user(id, firstname, lastname) {
-
+		Interface = new attendanceService(id);
 	}
 
 	void menu() {
@@ -206,7 +187,7 @@ int validInput(int start, int end) {
 	return choice;
 }
 
-// User login functionality
+// User login functionality and choosing the user who logged in
 bool login() {
 	system("CLS");
 	cout << "User must Login to continue" << endl << endl;
@@ -228,10 +209,10 @@ bool login() {
 		if (read.is_open()) {
 			while (!read.eof() and !flag) {
 				read >> id >> pass >> first >> last >> casual >> earned >> official >> unpaid;
-				if (userid == id and userpass == pass)
+				if (userid == id and userpass == pass)		// If employee entered correct username and password
 				{
 					flag = true;
-					current = new Employee(id, first, last, casual, earned, official, unpaid);
+					current = new Employee(id, first, last, casual, earned, official, unpaid);			// Create employee object as user
 				}
 			}
 		}
@@ -245,10 +226,10 @@ bool login() {
 		if (read.is_open()) {
 			while (!read.eof() and !flag) {
 				read >> id >> pass >> first >> last;
-				if (userid == id and userpass == pass)
+				if (userid == id and userpass == pass)		// If guard entered correct username and password
 				{
 					flag = true;
-					current = new Guard(id, first, last);
+					current = new Guard(id, first, last);		// Create guard object as user
 				}
 			}
 		}
@@ -263,7 +244,7 @@ bool login() {
 			while (!read.eof() and !flag) {
 				read >> readid;
 				read >> readpass;
-				if (userid == readid and userpass == readpass)
+				if (userid == readid and userpass == readpass)		// If supervisor entered correct username and password
 					flag = true;
 			}
 		}
@@ -278,7 +259,7 @@ bool login() {
 			while (!read.eof() and !flag) {
 				read >> readid;
 				read >> readpass;
-				if (userid == readid and userpass == readpass)
+				if (userid == readid and userpass == readpass)		// If employee entered correct username and password
 					flag = true;
 			}
 		}
