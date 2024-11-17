@@ -10,7 +10,7 @@ class attendance {
 	string empid;			// Stores employee id
 	string guardid;			// Stroes guard id 
 	Date date;				// Attendance date 
-	string weekday;				// Attenance weekday
+	string weekday;			// Attenance weekday
 	Time entry;				// Time of entry
 	Time exit;				// Time of exit
 public:
@@ -29,7 +29,6 @@ public:
 		this->weekday = weekday;
 		this->entry = entry;
 		this->exit = exit;
-		this->hours = exit - entry;
 	}
 	
 	// Copy constructor
@@ -40,7 +39,6 @@ public:
 		weekday = obj.weekday;
 		entry = obj.entry;
 		exit = obj.exit;
-		hours = obj.hours;
 	}
 
 	// Function to get id of employee whose attendance record is it
@@ -191,8 +189,8 @@ public:
 	// Function to mark attendance of employee
 	void markAttendance() {
 		cin >> empAttendance;
-		ifstream write("Attendance.txt", ios::app);
-		write >> empAttendance;
+		ofstream write("Attendance.txt", ios::app);
+		write << empAttendance;
 		write.close();
 	}
 };

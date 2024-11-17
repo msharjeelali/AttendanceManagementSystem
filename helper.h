@@ -3,6 +3,20 @@
 #include<string>
 using namespace std;
 
+// Function to validate menu input
+int validInput(int start, int end) {
+	int choice;
+	do {
+		cout << "Enter your choice: ";
+		cin >> choice;					// Get user choice
+		if (cin.fail()) {				// If not an interger
+			cin.clear();
+			cin.ignore();
+		}
+	} while (choice< start or choice > end);	// Loop untill input is not in range
+	return choice;
+}
+
 #pragma once
 class Date
 {
@@ -58,6 +72,22 @@ public:
 		}
 		else
 			return false;
+	}
+
+	// Function to check if calling date lies between the given two obj or not
+	bool between(Date& start, Date& end) const{
+		if (start == *this || end == *this || (start < *this && *this < end))
+			return true;
+		return false;
+	}
+
+	// Overloading greater than operator to check if calling object is greater (ahead date) than passed object
+	bool operator > (Date obj) const {
+		if (year != obj.year)
+			return year > obj.year;
+		if (month != obj.month)
+			return month > obj.month;
+		return day > obj.day;
 	}
 
 	// Overloading less than operator to check if calling object is less (prev date) than passed object
