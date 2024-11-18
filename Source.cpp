@@ -63,9 +63,33 @@ public:
 		system("cls");
 		if (attendanceRecord.empty() != true) {
 			cout << "Employee Attendance Record" << endl << endl;
+			
+			vector<string>weekday { "monday", "tuesday", "wednesday", "thursday", "friday" };
+			string day = attendanceRecord.begin()->getDay();
+			transform(day.begin(), day.end(), day.begin(), ::tolower);
+			int index = find(weekday.begin(),weekday.end(),day) - weekday.begin() + 1;
+
+			Date rangefrom = attendanceRecord.begin()->getDate()  - index;
+			Date rangeto = rangefrom + 6;
+
+			Time sum(0,0);
 			for (auto ite : attendanceRecord) {
+				if (ite.getDate() > rangeto) {
+					cout << "Week Report : " << endl
+						<< "From: " << rangefrom << " To: " << rangeto 
+						<< " Total Working Hours: " << sum << endl;
+					rangefrom = rangeto + 1;
+					rangeto = rangefrom + 6;
+					cout << "--------------------------------------------------" << endl;
+					sum = Time(0,0);
+				}
 				cout << ite;
+				sum = sum + ite.getWorkingHours();
 			}
+			cout << "Week Report : " << endl
+				<< "From: " << rangefrom << " To: " << rangeto
+				<< "Total Working Hours: " << sum << endl;
+			cout << "--------------------------------------------------" << endl;
 		} else
 			cout << "No records found" << endl;
 		system("pause");

@@ -46,6 +46,16 @@ public:
 		return empid;
 	}
 
+	// Function to get date of attendance record
+	Date getDate() const {
+		return date;
+	}
+
+	// Function to get day of attendance record
+	string getDay() const {
+		return weekday;
+	}
+
 	// Function to get working hours on given attendance record
 	Time getWorkingHours() const {
 		return exit - entry;

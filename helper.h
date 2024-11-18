@@ -81,6 +81,42 @@ public:
 		return false;
 	}
 
+	// Overloading plus operator to calcualte ranges of week in weekly report
+	Date operator + (int day) const {
+		Date result = *this;
+		int daysInMonth[] = { 0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+		
+		result.day += day;
+		if (result.day > daysInMonth[result.month] ) {
+			result.day = result.day % daysInMonth[result.month];
+			result.month++;
+			if (result.month > 12) {
+				result.month = 1;
+				result.year++;
+			}
+		}
+
+		return result;
+	}
+
+	// Overloading minus operator to calculate ranges of week in weekly report
+	Date operator - (int day) const {
+		Date result = *this;
+		int daysInMonth[] = { 0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+
+		result.day -= day;
+		if (result.day < 1) {
+			result.day = daysInMonth[result.month] - result.day;
+			result.month--;
+			if (result.month < 1) {
+				result.month = 12;
+				result.year--;
+			}
+		}
+
+		return result;
+	}
+
 	// Overloading greater than operator to check if calling object is greater (ahead date) than passed object
 	bool operator > (Date obj) const {
 		if (year != obj.year)
@@ -218,12 +254,23 @@ public:
 		return true;
 	}
 
-	// Overloading minus operator to subtract to Time objects and get thier difference in form of Time object
+	// Overloading minus operator to subtract two Time objects and get thier difference in form of Time object
 	Time operator - (const Time& obj) const{
 		int first = this->hour * 60 + this->min;
 		int second = obj.hour * 60 + obj.min;
 		
 		int res = first - second;
+		if (res < 0)
+			return Time(0, 0);
+		return Time(res / 60, res % 60);
+	}
+
+	// Overloading plus operator to add working hours for weekly report
+	Time operator + (const Time& obj) const {
+		int first = this->hour * 60 + this->min;
+		int second = obj.hour * 60 + obj.min;
+
+		int res = first + second;
 		if (res < 0)
 			return Time(0, 0);
 		return Time(res / 60, res % 60);
