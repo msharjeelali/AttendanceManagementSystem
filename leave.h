@@ -21,10 +21,20 @@ public:
 	}
 };
 
-class pending : public status {
+class pendingSuper : public status {
+public:
+	pendingSuper() {
+
+	}
+	string getStatus() const {
+		return "Supervisor approval pending";
+	}
+};
+
+class pendingDirec : public status {
 public:
 	string getStatus() const {
-		return "pending";
+		return "Director approval pending";
 	}
 };
 
@@ -44,60 +54,52 @@ public:
 
 class leave
 {
-	int id;
-	string empid;			// Stores employee id
-	string name;			// Stores employee name
-	Date from;				// Leave request from which date
-	Date till;				// Leave request to which date
-	string address;			// Leave address			
-	string reason;			// Reason for leave
-	Date applied;			// Leave applied date
-	Date approved;			// leave approved date
-	unique_ptr<status> current;		// Current status of leave
+protected:
+	int id;							// Stores leave id
+	string empid;					// Stores employee id
+	Date from;						// Leave request from which date
+	Date till;						// Leave request to which date
+	string address;					// Leave address			
+	string reason;					// Reason for leave
+	Date applied;					// Leave applied date
+	Date approved;					// leave approved date
+	status* current;				// Current status of leave
 	
-	virtual string getType() const = 0;
-	void setStatus(unique_ptr<status> obj) {
-		current = move(obj);		// Move new obj to current
-	}
-	friend class leaveService;
 public:
-	leave(string empid,string name) : current(nullptr) {
+	leave(string empid) : current(nullptr) {
 		id = 0;
 		this->empid = empid;
-		this->name = name;
 	}
-	
-	friend ostream& operator << (ostream & out,const leave & obj) {
-		out << "Leave ID: " << obj.id << endl 
-			<< "Employee ID: " << obj.empid << endl 
-			<< "Name: " << obj.name << endl 
-			<< "Period: " << obj.from << " - " << obj.till << endl 
-			<< "Application Date: " << obj.applied << endl 
-			<< "Type: " << obj.getType() << endl
-			<< "Adress: " << obj.address << endl 
-			<< "Reason: " << obj.reason << endl;
-		return out;
+
+	void setStatus(status* obj) {
+		if (current != nullptr)		// Check if current is nullptr
+			delete current;
+		current = obj;				// Set new status to object
 	}
-	friend ofstream& operator << (ofstream& out,const leave& obj) {
-		out << obj.id << " " 
-			<< obj.empid << " " 
-			<< obj.from << " " 
-			<< obj.till << " " 
-			<< obj.getType() << " " 
-			<< obj.applied << " " 
-			<< obj.address << endl 
-			<< obj.reason << endl;
-		return out;
+	void readRecordFile(ifstream& in) {
+		string read;
+		string temp;
+		getline(in, read);
+		stringstream ss(read);
+		ss >> temp;
+		this->id = stoi(temp);
+		ss >> this->empid >> this->from >> this->till >> this->applied >> this->address;
+		while (ss >> temp)
+			this->reason += " " + temp;
 	}
-	friend istream& operator >> (istream& in, leave& obj) {
+	void printRecord() {
+		cout << " " << id << " " << empid << " " << getType() << " " << from << " " << till << " " << applied
+			<< " " << approved << " " << current->getStatus() << " " << address << " " << reason << endl;
+	}
+	void userLeaveApplication() {
 		bool flag = false;
 		// Loop until correct date is enterd in specified format ( DD/MM )
 		while (!flag) {
 			cout << "Leave from i.e. ( DD/MM ): ";
-			in >> obj.from;
+			cin >> this->from;
 			cout << "Leave till i.e. ( DD/MM ): ";
-			in >> obj.till;
-			if (obj.from.valid() and obj.till.valid() and (obj.from < obj.till or obj.from == obj.till))
+			cin >> this->till;
+			if (this->from.valid() && this->till.valid() && (this->from < this->till || this->from == this->till))
 				flag = true;
 			// Check if attendance record of entered date is already present or not
 			if (flag) {
@@ -107,17 +109,14 @@ public:
 					string fileempid;
 					Date datefrom;
 					Date datetill;
-					string reason;
+					string extra;
 					while (getline(read, temp) and flag) {
-						getline(read, reason);
 						stringstream ss(temp);
-						ss >> fileempid;
-						ss >> fileempid;
-						if (fileempid == obj.empid) {
-							cout << "Employee Found" << endl;
+						ss >> extra >> extra >> fileempid >> datefrom >> datetill;
+						if (fileempid == this->empid) {
 							ss >> datefrom;
 							ss >> datetill;
-							if (obj.from.between(datefrom,datetill)) {
+							if (this->from.between(datefrom, datetill)) {
 								flag = false;
 								cout << "Leave already applied of this period." << endl;
 							}
@@ -133,34 +132,36 @@ public:
 			}
 		}
 
-		if(flag) {
-			// New leave id
-			obj.id = ++curr;
-
+		if (flag) {
 			// Input of leave address
 			cout << "Enter address: ";
-			in >> obj.address;
+			cin >> this->address;
 
 			// Input of leave reason
 			cout << "Enter reason: ";
 			cin.ignore();
-			getline(cin, obj.reason);
+			getline(cin, this->reason);
 
 			// Get current date as date of application
 			time_t now = std::time(0);
 			struct tm now_tm;
 			localtime_s(&now_tm, &now);
-			obj.applied = Date::Date(now_tm.tm_mday, now_tm.tm_mon + 1, now_tm.tm_year + 1900);
+			this->applied = Date::Date(now_tm.tm_mday, now_tm.tm_mon + 1, now_tm.tm_year + 1900);
 		}
-		return in;
 	}
-	friend ifstream& operator >> (ifstream& in, leave& obj) {
-		string first, last;
-		in >> obj.empid >> obj.from >> obj.till >> obj.applied >> obj.address;
-		getline(in, obj.reason);
-		obj.name = first + last;
-		return in;
+	void writeLeaveFile() {
+		ofstream write("PendingSuper.txt", ios::app);
+		if (write.is_open()) {
+			write << endl << getType() << " " << id << " " << empid << " " << from << " " << till 
+				<< " " << applied << " " << address << " " << reason;
+			cout << "Leave applied successfully" << endl;
+		}
+		else
+			cout << "Leave application failed!" << endl;
+		write.close();
 	}
+
+	virtual string getType() const = 0;
 };
 
 class casual : public leave {
@@ -168,10 +169,9 @@ class casual : public leave {
 		return "casual";
 	}
 public:
-	casual(string empid,string name) :leave(empid,name) {
-		
+	casual(string empid = "NA",status* obj = nullptr) :leave(empid) {
+		this->setStatus(obj);
 	}
-	
 };
 
 class earned : public leave {
@@ -179,8 +179,8 @@ class earned : public leave {
 		return "earned";
 	}
 public:
-	earned(string empid, string name) :leave(empid, name) {
-
+	earned(string empid = "NA",status* obj = nullptr) :leave(empid) {
+		this->setStatus(obj);
 	}
 };
 
@@ -189,7 +189,8 @@ class official : public leave {
 		return "official";
 	}
 public:
-	official(string empid, string name) :leave(empid, name) {
+	official(string empid = "NA",status* obj = nullptr) :leave(empid) {
+		this->setStatus(obj);
 	}
 };
 
@@ -198,23 +199,29 @@ class unpaid : public leave {
 		return "unpaid";
 	}
 public:
-	unpaid(string empid, string name) :leave(empid, name) {
+	unpaid(string empid = "NA",status* obj = nullptr) :leave(empid) {
+		this->setStatus(obj);
 	}
 };
 
 // Interface of leave service for employee
 class leaveInterfaceEmployee {
 public:
-	virtual void applyLeave(string,string) = 0;
+	virtual void applyLeave(string) = 0;
+};
+
+// Interface of leave service for supervisor
+class leaveInterfaceSupervisor {
+public:
+	virtual void processLeaveSuper() = 0;
 };
 
 // Class which provide all the leave realted services like apply for leave, cancel leave, approve leave, reject leave
-class leaveService : public leaveInterfaceEmployee{
+class leaveService : public leaveInterfaceEmployee, public leaveInterfaceSupervisor{
 	leave* leaveObj;					// pointer of parent class to create any child class object when needed
 public:
-
 	// Function to apply for leave i.e. create specified leave object
-	void applyLeave(string empid, string name) {
+	void applyLeave(string empid) {
 		system("CLS");
 		cout << "Apply Leave Menu" << endl
 			<< "1- Casual Leave" << endl
@@ -224,30 +231,29 @@ public:
 			<< "5- Exit" << endl;
 		int choice = validInput(1, 5);
 		if (choice == 1)
-			leaveObj = new casual(empid, name);
+			leaveObj = new casual(empid);
 		else if (choice == 2)
-			leaveObj = new earned(empid, name);
+			leaveObj = new earned(empid);
 		else if (choice == 3)
-			leaveObj = new unpaid(empid, name);
+			leaveObj = new unpaid(empid);
 		else if (choice == 4)
-			leaveObj = new official(empid, name);
+			leaveObj = new official(empid);
 		else
 			return;
 
 		// Get leave deatils from the user
-		cin >> *leaveObj;	
+		leaveObj->userLeaveApplication();
 
-		// Record leave details in the file
-		ofstream write("PendingSuper.txt",ios::app);
-		if (write.is_open()) {
-			write << *leaveObj;
-			cout << "Leave applied successfully" << endl;
-		}
-		else
-			cout << "Leave application failed!" << endl;
-		write.close();
+		//Record leave details in the file
+		leaveObj->writeLeaveFile();
+
 		system("pause");
 	}
 
+	// Function for supervisor to approve leave
+	void processLeaveSuper() {
+
+		
+	}
 
 };

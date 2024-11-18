@@ -13,7 +13,7 @@ int validInput(int start, int end) {
 			cin.clear();
 			cin.ignore();
 		}
-	} while (choice< start or choice > end);	// Loop untill input is not in range
+	} while (choice< start || choice > end);	// Loop untill input is not in range
 	return choice;
 }
 
@@ -53,7 +53,7 @@ public:
 
 	// Function which takes string as argument and check if date stored in calling object is same as date passsed as string
 	bool compare(string date) {
-		if (date.length() >= 3 and date.find('/') != string::npos)		// Condition to check if string is in proper format i.e. ( DD/MM )
+		if (date.length() >= 3 && date.find('/') != string::npos)		// Condition to check if string is in proper format i.e. ( DD/MM )
 		{
 			int index = 0;
 			string temp;
@@ -120,7 +120,10 @@ public:
 	
 	// Overloading cout operaotor to print date in specific format on console
 	friend ostream& operator << (ostream& out, const Date& today) {
-		out << today.day << "/" << today.month << "/" << today.year;
+		if (today.day == 0 && today.month == 0)
+			out << "TBD";
+		else
+			out << today.day << "/" << today.month << "/" << today.year;
 		return out;
 	}
 	
@@ -136,7 +139,7 @@ public:
 		string date;
 		in >> date;
 		
-		if (date.length() >= 3 and date.find('/') != string::npos) {
+		if (date.length() >= 3 && date.find('/') != string::npos) {
 			int index = 0;
 			string temp;
 			while (date[index] != '/')
@@ -160,14 +163,14 @@ public:
 		in >> date;
 		
 		int index = 0;
-		string temp;
-		while (date[index] != '/' and index < date.length())
+		string temp = "";
+		while (date[index] != '/' && index < date.length())
 			temp += date[index++];
 		today.day = stoi(temp);
 
 		index++;
 		temp.clear();
-		while (date[index] != '/' and index < date.length())
+		while (date[index] != '/' && index < date.length())
 			temp += date[index++];
 		today.month = stoi(temp);
 
@@ -198,19 +201,19 @@ public:
 
 	// Function to check whether time is valid or not
 	bool valid() const {
-		return !(hour < 0 or hour > 23 or min < 0 or min > 59);
+		return !(hour < 0 || hour > 23 || min < 0 || min > 59);
 	}
 
 	// Function to comapre to time objects
 	bool compare(Time obj) const{
-		return (min == obj.min) and (hour == obj.hour);
+		return (min == obj.min) && (hour == obj.hour);
 	}
 
 	// Function to check validity of time i.e. whether entry time entered is earlier than exit time
 	static bool checktime(Time entry, Time exit) {
 		if (entry.hour > exit.hour)
 			return false;
-		else if (entry.hour == exit.hour and entry.min > exit.min)
+		else if (entry.hour == exit.hour && entry.min > exit.min)
 			return false;
 		return true;
 	}
@@ -251,7 +254,7 @@ public:
 		string intime;
 		in >> intime;
 
-		if (intime.length() >= 3 and intime.find(':') != string::npos) {
+		if (intime.length() >= 3 && intime.find(':') != string::npos) {
 			int index = 0;
 			string temp;
 			while (intime[index] != ':')

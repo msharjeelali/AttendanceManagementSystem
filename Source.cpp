@@ -2,11 +2,14 @@
 #include<fstream>
 #include<vector>
 #include<algorithm>
+#include<string>
+#include<sstream>
 #include "attendance.h"
 #include "leave.h"
 
 using namespace std;
 
+class user;
 bool login();
 
 // Interface of report class for employee
@@ -15,52 +18,102 @@ public:
 	virtual void viewEmployeeAttendance(string) = 0;
 };
 
-// Interface of report class for supervisor and director
-class reportInterfaceAuthority {
+// Interface of report class for supervisor
+class reportInterfaceSupervisor {
+public:
+	virtual void viewEmployeeAttendance() = 0;
+	virtual void viewPendingLeaveSupervisor() = 0;
+};
+
+// Interface of report class for director
+class reportInterfaceDirector {
 public:
 	virtual void viewEmployeeAttendance() = 0;
 };
 
 // Report class implementation to generate reports of employee's attendance and leaves
-class report: public reportInterfaceEmployee{
-protected:
+class report: public reportInterfaceEmployee, public reportInterfaceSupervisor, public reportInterfaceDirector{
 	vector<attendance> attendanceRecord;
+	vector<leave*> leaveRecord;
 
-public:
-	report() {
-		ifstream read("Attendence.txt");
+	// Read attendance records of an employee
+	void readAttendanceRecords(string empid) {
+		ifstream read("Attendance.txt");
 		if (read.is_open()) {
 			while (!read.eof()) {
 				attendance obj;
 				read >> obj;
-				attendanceRecord.push_back(obj);
+				if(obj.getEmpID() == empid)
+					attendanceRecord.push_back(obj);
 			}
+			read.close();
 		}
 		else
 			cout << "File not found!" << endl;
 		sort(attendanceRecord.begin(), attendanceRecord.end());
 	}
+public:
+	report() {
+
+	}
 
 	void viewEmployeeAttendance(string empid) {
-		bool flag = false;
-		cout << "Employee Attendance Record" << endl << endl;
-		for (auto ite : attendanceRecord) {
-			if (ite.getEmpID() == empid) {
+		attendanceRecord.clear();
+		readAttendanceRecords(empid);
+		system("cls");
+		if (attendanceRecord.empty() != true) {
+			cout << "Employee Attendance Record" << endl << endl;
+			for (auto ite : attendanceRecord) {
 				cout << ite;
-				flag = true;
 			}
-		}
-		if (!flag)
+		} else
 			cout << "No records found" << endl;
 		system("pause");
 	}
-
 	void viewEmployeeAttendance() {
-		system("cls");
-		string empid;
-		cout << "Enter employee ID: ";
-		cin >> empid;
-		viewEmployeeAttendance(empid);
+		int choice = 0;
+		do {
+			system("cls");
+			string empid;
+			cout << "Enter employee ID: ";
+			cin >> empid;
+			viewEmployeeAttendance(empid);
+			cout << "1- View another employee records" << endl
+				<< "2- Return" << endl;
+			choice = validInput(1, 2);
+		} while (choice == 1);
+	}
+	void viewPendingLeaveSupervisor() {
+		leaveRecord.clear();
+		leave* obj = nullptr;
+		ifstream read("PendingSuper.txt");
+		if (read.is_open()) {
+			string type;
+			while (!read.eof()) {
+				read >> type;
+				if (type == "casual")
+					obj = new casual("NA", new pendingSuper());
+				else if (type == "earned")
+					obj = new earned("NA", new pendingSuper());
+				else if (type == "official")
+					obj = new official("NA", new pendingSuper());
+				else if (type == "unpaid")
+					obj = new unpaid("NA", new pendingSuper());
+				obj->readRecordFile(read);
+				leaveRecord.push_back(obj);
+			}
+		}
+		else
+			cout << "File not found!" << endl;
+
+		if (leaveRecord.empty()) {
+			cout << "No leaves to process" << endl;
+		}
+		else {
+			for (auto ite : leaveRecord)
+				ite->printRecord();
+		}
+		system("pause");
 	}
 };
 
@@ -71,8 +124,6 @@ protected:
 	string id;				// Store user id
 	string firstName;		// Store frist name
 	string lastName;		// Store last name
-
-	friend class leaveService;
 public:
 	user(string id = "NA", string firstname = "NA", string lastname = "NA") {
 		this->id = id;
@@ -80,18 +131,15 @@ public:
 		this->lastName = lastname;
 	}
 
-	virtual void getDetails() {
-		cout << "User id: " << id << endl << "Name: " << firstName << " " << lastName << endl;
-	}
-
 	string getID() {
 		return id;
 	}
-	
 	string getName() {
 		return firstName + lastName;
 	}
-
+	virtual void getDetails() {
+		cout << "User id: " << id << endl << "Name: " << firstName << " " << lastName << endl;
+	}
 	virtual void menu() = 0;
 };
 
@@ -101,8 +149,8 @@ class Employee : public user {
 	int earned;
 	int official;
 	bool unpaid;
-	leaveInterfaceEmployee* leaveInterface;
-	reportInterfaceEmployee* reportInterface;
+	leaveInterfaceEmployee* leaveInterface;			// Leave interface for employee
+	reportInterfaceEmployee* reportInterface;		// Report interface for employee
 
 	// Functoin to get details of employee
 	void getDetails() {
@@ -140,15 +188,18 @@ public:
 			if (choice == 1)
 				this->getDetails();			// Get details of employee
 			else if (choice == 2)
-				reportInterface->viewEmployeeAttendance(id);		// View own attendance records
+				reportInterface->viewEmployeeAttendance(this->id);		// View own attendance records
 			else if (choice == 3)
-				leaveInterface->applyLeave(id,firstName+lastName);		// Apply for the leave
+				leaveInterface->applyLeave(id);		// Apply for the leave
 		} while (choice != 4);
 	}
 };
 
 // Supervisor class implementation
 class Supervisor : public user {
+	reportInterfaceSupervisor* reportInterface;		// Report interafce for supervisor
+	leaveInterfaceSupervisor* leaveInterface;
+
 	// Functoin to get details of supervisor
 	void getDetails() {
 		system("CLS");
@@ -159,7 +210,8 @@ class Supervisor : public user {
 public:
 	// Supervisor default constructor
 	Supervisor(string id = "NA",string first = "NA",string last = "NA") : user(id,first,last){
-
+		reportInterface = new report();
+		leaveInterface = new leaveService();
 	}
 
 	// Function to display menu for supervisor
@@ -167,18 +219,31 @@ public:
 		int choice = 0;
 		do {
 			system("CLS");
-			cout << "Supervisor Menu" << endl << endl;
-			cout << "1- Guard Details" << endl;
-			cout << "3- Logout" << endl;
-			choice = validInput(1, 3);
+			cout << "Supervisor Menu" << endl << endl
+				<< "1- Guard Details" << endl
+				<< "2- Specific Employee Attendance Record" << endl
+				<< "3- Process Leave Application" << endl
+				<< "4- View Outstanding Leaves" << endl
+				<< "5- Logout" << endl;
+			choice = validInput(1, 5);
 			if (choice == 1)
-				this->getDetails();						// Get guard details
-		} while (choice != 3);
+				this->getDetails();							// Get supervisor details
+			else if (choice == 2)
+				reportInterface->viewEmployeeAttendance();	// View employee attendance 
+			else if (choice == 3) {
+				reportInterface->viewPendingLeaveSupervisor();	// Show supervisor which leaves are outstanding so he can process
+				leaveInterface->processLeaveSuper();		// Process leave applications
+			}
+			else if (choice == 4)
+				reportInterface->viewPendingLeaveSupervisor(); // View supervisor outstanding leaves
+		} while (choice != 5);
 	}
 };
 
-// Director class implementation
+ //Director class implementation
 class Director : public user {
+	reportInterfaceDirector* reportInterface;		// Report interface for director
+
 	// Functoin to get details of director
 	void getDetails() {
 		system("CLS");
@@ -189,7 +254,7 @@ class Director : public user {
 public:
 	// Director default constructor
 	Director(string id = "NA", string first = "NA", string last = "NA") : user(id, first, last) {
-
+		reportInterface = new report();
 	}
 
 	// Function to display menu for director
@@ -197,18 +262,22 @@ public:
 		int choice = 0;
 		do {
 			system("CLS");
-			cout << "Director Menu" << endl << endl;
-			cout << "1- Director Details" << endl;
-			cout << "3- Logout" << endl;
+			cout << "Director Menu" << endl << endl
+				<< "1- Director Details" << endl
+				<< "2- Specific Employee Attendance Record" << endl
+				<< "3- Logout" << endl;
 			choice = validInput(1, 3);
 			if (choice == 1)
 				this->getDetails();						// Get guard details
+			else if (choice == 2)
+				reportInterface->viewEmployeeAttendance();
 		} while (choice != 3);
 	}
 };
 
 // Guard class implementation
 class Guard : public user {
+	attendanceService* attendanceInterface;
 
 	// Functoin to get details of guard
 	void getDetails() {
@@ -217,11 +286,10 @@ class Guard : public user {
 		user::getDetails();
 		system("Pause");
 	}
-
 public:
 	// Deafult constructor of guard
 	Guard(string id = "NA", string firstname = "NA", string lastname = "NA") :user(id, firstname, lastname) {
-		
+		attendanceInterface = new attendanceService(id);
 	}
 	
 	// Function to display menu for guard
@@ -229,13 +297,15 @@ public:
 		int choice = 0;
 		do {
 			system("CLS");
-			cout << "Guard Menu" << endl << endl;
-			cout << "1- Guard Details" << endl;
-			cout << "2- Mark Attendence" << endl;
-			cout << "3- Logout" << endl;
+			cout << "Guard Menu" << endl << endl
+				<< "1- Guard Details" << endl
+				<< "2- Mark Attendence" << endl
+				<< "3- Logout" << endl;
 			choice = validInput(1, 3);
 			if (choice == 1)
 				this->getDetails();						// Get guard details
+			else if (choice == 2)
+				attendanceInterface->markAttendance();	// Mark attendance of employee
 		} while (choice != 3);
 	}
 };
@@ -263,9 +333,9 @@ bool login() {
 		int casual, earned, official, unpaid;
 		ifstream read("Employee.txt");
 		if (read.is_open()) {
-			while (!read.eof() and !flag) {
+			while (!read.eof() && !flag) {
 				read >> id >> pass >> first >> last >> casual >> earned >> official >> unpaid;
-				if (userid == id and userpass == pass)		// If employee entered correct username and password
+				if (userid == id && userpass == pass)		// If employee entered correct username and password
 				{
 					flag = true;
 					current = new Employee(id, first, last, casual, earned, official, unpaid);			// Create employee object as user
@@ -280,9 +350,9 @@ bool login() {
 		string id, pass, first, last;
 		ifstream read("Guard.txt");
 		if (read.is_open()) {
-			while (!read.eof() and !flag) {
+			while (!read.eof() && !flag) {
 				read >> id >> pass >> first >> last;
-				if (userid == id and userpass == pass)		// If guard entered correct username and password
+				if (userid == id && userpass == pass)		// If guard entered correct username and password
 				{
 					flag = true;
 					current = new Guard(id, first, last);		// Create guard object as user
@@ -297,9 +367,9 @@ bool login() {
 		string readid, readpass, first, last;
 		ifstream read("Supervisor.txt");
 		if (read.is_open()) {
-			while (!read.eof() and !flag) {
+			while (!read.eof() && !flag) {
 				read >> readid >> readpass >> first >> last;
-				if (userid == readid and userpass == readpass)		// If supervisor entered correct username and password
+				if (userid == readid && userpass == readpass)		// If supervisor entered correct username and password
 				{
 					flag = true;
 					current = new Supervisor(readid, first, last);	// Create supervisor object as user
@@ -314,9 +384,9 @@ bool login() {
 		string readid, readpass, first, last;
 		ifstream read("Director.txt");
 		if (read.is_open()) {
-			while (!read.eof() and !flag) {
+			while (!read.eof() && !flag) {
 				read >> readid >> readpass >> first >> last;
-				if (userid == readid and userpass == readpass)		// If employee entered correct username and password
+				if (userid == readid && userpass == readpass)		// If employee entered correct username and password
 				{
 					flag = true;
 					current = new Director(readid, first, last);	// Create director object as user
@@ -341,5 +411,6 @@ int main()
 	}
 
 	current->menu();
+
 	return 0;
 }

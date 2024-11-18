@@ -64,12 +64,15 @@ public:
 
 	// Overloading ofstream operator to write attendance record in file
 	friend ofstream& operator <<(ofstream& out, const attendance& obj) {
-		out << " " << obj.empid << " " << obj.guardid << " " << obj.date << " " << obj.weekday << " " << obj.entry << " " << obj.exit << endl;
+		out << endl << obj.empid << " " << obj.guardid << " " << obj.date << " " << obj.weekday << " " << obj.entry << " " << obj.exit;
 		return out;
 	}
 	
 	// Overloading cin operator to input required attendance details and store in attendance object
 	friend istream& operator >>(istream& in, attendance& obj) {
+		system("cls");
+		cout << "Mark Employee Attendance" << endl << endl;
+
 		// Input of correct employee id
 		bool flag = false;
 		// Loop untill correct employee id entered by guard
@@ -80,90 +83,101 @@ public:
 			ifstream read("Employee.txt");
 			if (read.is_open()) {
 				string fileuserid;
-				while (getline(read, temp) and !flag) {
+				while (getline(read, temp) && !flag) {
 					stringstream ss(temp);
 					ss >> fileuserid;
 					if (fileuserid == obj.empid)
 						flag = true;
 				}
-			}
-			else
+			}else
 				cout << "File not found!" << endl;
 			if (!flag)
 				cout << "Employee not fuond!" << endl;
 		}
 
-		// Input of correct date
-		flag = false;
-		// Loop until correct date is enterd in specified format ( DD/MM )
-		while (!flag) {
-			cout << "Enter date i.e. ( DD/MM ): ";
-			in >> obj.date;
-			if (obj.date.valid())
-				flag = true;
-			// Check if attendance record of entered date is already present or not
-			if (flag) {					
-				string temp;
-				ifstream read("Attendence.txt");
-				if (read.is_open()) {
-					string fileuserid;
-					string filedate;
-					while (getline(read, temp) and flag) {
-						stringstream ss(temp);
-						ss >> fileuserid;
-						if (fileuserid == obj.empid) {
+		if (flag) {
+			// Input of correct date
+			flag = false;
+			// Loop until correct date is enterd in specified format ( DD/MM )
+			while (!flag) {
+				cout << "Enter date i.e. ( DD/MM ): ";
+				in >> obj.date;
+				if (obj.date.valid())
+					flag = true;
+				// Check if attendance record of entered date is already present or not
+				if (flag) {
+					string temp;
+					ifstream read("Attendance.txt");
+					if (read.is_open()) {
+						string fileuserid;
+						string filedate;
+						while (getline(read, temp) && flag) {
+							stringstream ss(temp);
 							ss >> fileuserid;
-							ss >> filedate;
-							cout << filedate << endl;
-							if (obj.date.compare(filedate)) {
-								flag = false;
-								cout << "Employee record for given date already exist." << endl;
+							if (fileuserid == obj.empid) {
+								ss >> fileuserid;
+								ss >> filedate;
+								if (obj.date.compare(filedate)) {
+									flag = false;
+									cout << "Employee record for given date already exist." << endl;
+								}
 							}
 						}
 					}
+					else
+						cout << "File not found!" << endl;
 				}
-				else
-					cout << "File not found!" << endl;
+			}
 
+			if (flag) {
+				// Input of correct weekday
+				flag = false;
+				// Loop until correct weekday is entered
+				while (!flag) {
+					cout << "Enter weekday: ";
+					in >> obj.weekday;
+					if (obj.weekday == "Monday" || obj.weekday == "monday" || obj.weekday == "Tuesday" || obj.weekday == "tuesday" || obj.weekday == "Wednesday" || obj.weekday == "wednesday" || obj.weekday == "Thursday" || obj.weekday == "thursday" || obj.weekday == "Friday" || obj.weekday == "friday")
+						flag = true;
+					if (!flag)
+						cout << "Invalid day entered!" << endl;
+				}
+
+				if (flag) {
+					// Input of entry and exit time in office of employee
+					flag = false;
+					// Loop till correct time is enterwd
+					while (!flag) {
+						flag = true;
+						cout << "Enter entry time i.e. HH:MM (24 hour format): ";
+						in >> obj.entry;
+						if (!obj.entry.valid())
+							flag = false;
+						if (!flag)
+						{
+							cout << "Invalid entry time entered!" << endl;
+							continue;
+						}
+
+						cout << "Enter exit time i.e. HH:MM (24 hour format): ";
+						in >> obj.exit;
+						if (!obj.exit.valid())
+							flag = true;
+						if (!flag) {
+							cout << "Invalid exit time entered!" << endl;
+							continue;
+						}
+						
+						// Check if entry time is earlier than exit
+						if (Time::checktime(obj.entry, obj.exit))
+							flag = true;
+						else {
+							cout << "Ambigous entry and exit time!" << endl;
+							flag = false;
+						}
+					}
+				}
 			}
 		}
-
-		// Input of correct date
-		flag = false;
-		// Loop until correct weekday is entered
-		while (!flag) {
-			cout << "Enter weekday: ";
-			in >> obj.weekday;
-			if (obj.weekday == "Monwday" or obj.weekday == "monday" or obj.weekday == "Tuesday" or obj.weekday == "tuesday" or obj.weekday == "Wednesday" or obj.weekday == "wednesday" or obj.weekday == "Thursday" or obj.weekday == "thursday" or obj.weekday == "Fridays" or obj.weekday == "friday")
-				flag = true;
-			if (!flag)
-				cout << "Invalid day entered!" << endl;
-		}
-
-		// Input of entry and exit time in office of employee
-		flag = false;
-		// Loop till correct time is enterwd
-		while (!flag) {
-			cout << "Enter entry time i.e. HH:MM (24 hour format): ";
-			in >> obj.entry;
-			if (obj.entry.valid())
-				flag = true;
-			if (!flag)
-				cout << "Invalid entry time entered!" << endl;
-
-			cout << "Enter exit time i.e. HH:MM (24 hour format): ";
-			in >> obj.exit;
-			if (obj.exit.valid())
-				flag = true;
-			if (!flag)
-				cout << "Invalid exit time entered!" << endl;
-			// Check if entry time is earlier than exit
-			if (Time::checktime(obj.entry, obj.exit))
-				flag = true;
-			else
-				cout << "Ambigous entry and exit time!" << endl;
-		}
-
 		return in;
 	}
 
@@ -188,10 +202,16 @@ public:
 	
 	// Function to mark attendance of employee
 	void markAttendance() {
-		cin >> empAttendance;
-		ofstream write("Attendance.txt", ios::app);
-		write << empAttendance;
-		write.close();
+		int choice = 0;
+		do {
+			cin >> empAttendance;
+			ofstream write("Attendance.txt", ios::app);
+			write << empAttendance;
+			write.close();
+			cout << "1- Mark another attendance" << endl
+				<< "2- Return" << endl;
+			choice = validInput(1, 2);
+		} while (choice == 1);
 	}
 };
 
