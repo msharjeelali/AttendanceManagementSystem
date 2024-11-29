@@ -4,198 +4,59 @@
 #include<algorithm>
 #include<string>
 #include<sstream>
+#include "userclass.h"
 #include "attendance.h"
 #include "leave.h"
 
 using namespace std;
 
-class user;
-bool login();
-
-// Interface of report class for employee
-class reportInterfaceEmployee {
-public:
-	virtual void viewEmployeeAttendance(string) = 0;
-};
-
-// Interface of report class for supervisor
-class reportInterfaceSupervisor {
-public:
-	virtual void viewEmployeeAttendance() = 0;
-	virtual void viewPendingLeaveSupervisor() = 0;
-};
-
-// Interface of report class for director
-class reportInterfaceDirector {
-public:
-	virtual void viewEmployeeAttendance() = 0;
-};
-
-// Report class implementation to generate reports of employee's attendance and leaves
-class report: public reportInterfaceEmployee, public reportInterfaceSupervisor, public reportInterfaceDirector{
-	vector<attendance> attendanceRecord;
-	vector<leave*> leaveRecord;
-
-	// Read attendance records of an employee
-	void readAttendanceRecords(string empid) {
-		ifstream read("Attendance.txt");
-		if (read.is_open()) {
-			while (!read.eof()) {
-				attendance obj;
-				read >> obj;
-				if(obj.getEmpID() == empid)
-					attendanceRecord.push_back(obj);
-			}
-			read.close();
-		}
-		else
-			cout << "File not found!" << endl;
-		sort(attendanceRecord.begin(), attendanceRecord.end());
-	}
-public:
-	report() {
-
-	}
-
-	void viewEmployeeAttendance(string empid) {
-		attendanceRecord.clear();
-		readAttendanceRecords(empid);
-		system("cls");
-		if (attendanceRecord.empty() != true) {
-			cout << "Employee Attendance Record" << endl << endl;
-			
-			vector<string>weekday { "monday", "tuesday", "wednesday", "thursday", "friday" };
-			string day = attendanceRecord.begin()->getDay();
-			transform(day.begin(), day.end(), day.begin(), ::tolower);
-			int index = find(weekday.begin(),weekday.end(),day) - weekday.begin() + 1;
-
-			Date rangefrom = attendanceRecord.begin()->getDate()  - index;
-			Date rangeto = rangefrom + 6;
-
-			Time sum(0,0);
-			for (auto ite : attendanceRecord) {
-				if (ite.getDate() > rangeto) {
-					cout << "Week Report : " << endl
-						<< "From: " << rangefrom << " To: " << rangeto 
-						<< " Total Working Hours: " << sum << endl;
-					rangefrom = rangeto + 1;
-					rangeto = rangefrom + 6;
-					cout << "--------------------------------------------------" << endl;
-					sum = Time(0,0);
-				}
-				cout << ite;
-				sum = sum + ite.getWorkingHours();
-			}
-			cout << "Week Report : " << endl
-				<< "From: " << rangefrom << " To: " << rangeto
-				<< "Total Working Hours: " << sum << endl;
-			cout << "--------------------------------------------------" << endl;
-		} else
-			cout << "No records found" << endl;
-		system("pause");
-	}
-	void viewEmployeeAttendance() {
-		int choice = 0;
-		do {
-			system("cls");
-			string empid;
-			cout << "Enter employee ID: ";
-			cin >> empid;
-			viewEmployeeAttendance(empid);
-			cout << "1- View another employee records" << endl
-				<< "2- Return" << endl;
-			choice = validInput(1, 2);
-		} while (choice == 1);
-	}
-	void viewPendingLeaveSupervisor() {
-		leaveRecord.clear();
-		leave* obj = nullptr;
-		ifstream read("PendingSuper.txt");
-		if (read.is_open()) {
-			string type;
-			while (!read.eof()) {
-				read >> type;
-				if (type == "casual")
-					obj = new casual("NA", new pendingSuper());
-				else if (type == "earned")
-					obj = new earned("NA", new pendingSuper());
-				else if (type == "official")
-					obj = new official("NA", new pendingSuper());
-				else if (type == "unpaid")
-					obj = new unpaid("NA", new pendingSuper());
-				obj->readRecordFile(read);
-				leaveRecord.push_back(obj);
-			}
-		}
-		else
-			cout << "File not found!" << endl;
-
-		if (leaveRecord.empty()) {
-			cout << "No leaves to process" << endl;
-		}
-		else {
-			for (auto ite : leaveRecord)
-				ite->printRecord();
-		}
-		system("pause");
-	}
-};
-
-// User class implementation
-class user
-{
-protected:
-	string id;				// Store user id
-	string firstName;		// Store frist name
-	string lastName;		// Store last name
-public:
-	user(string id = "NA", string firstname = "NA", string lastname = "NA") {
-		this->id = id;
-		this->firstName = firstname;
-		this->lastName = lastname;
-	}
-
-	string getID() {
-		return id;
-	}
-	string getName() {
-		return firstName + lastName;
-	}
-	virtual void getDetails() {
-		cout << "User id: " << id << endl << "Name: " << firstName << " " << lastName << endl;
-	}
-	virtual void menu() = 0;
-};
-
 // Employee class implementation
 class Employee : public user {
-	int casual;
-	int earned;
-	int official;
-	bool unpaid;
-	leaveInterfaceEmployee* leaveInterface;			// Leave interface for employee
-	reportInterfaceEmployee* reportInterface;		// Report interface for employee
+	// Object of leave record to store information of employye leaves
+	leaveRecordI* leaves;
+	// Leave interface for employee for apply and cancel leave operations
+	leaveInterfaceEmployee* leaveInterface;
+	// Leave report interface to generate own leave reports
+	leaveReportsEmployeeI* leaveReport;
+	// Attendance report interface to generate own attenadance reports
+	AttendanceReportEmployeeI* attendanceReport;
 
 	// Functoin to get details of employee
 	void getDetails() {
 		system("CLS");
 		cout << "Employee Details" << endl << endl;
+		// Calling function of parent class
 		user::getDetails();
-		cout << "Availible Leaves: Casual = " << casual << endl;
-		cout << "\t  Earned = " << earned << endl;
-		cout << "Official Leaves = " << official << endl;
-		cout << "Unpaid Leave Status = " << (unpaid ? "Active" : "Not Active") << endl;
 		system("Pause");
 	}
+
 public:
 	// Deafult constructor of employee
-	Employee(string id, string firstname, string lastname, int casual, int earned, int official, bool unpaid) :user(id, firstname, lastname) {
-		this->casual = casual;
-		this->earned = earned;
-		this->official = official;
-		this->unpaid = unpaid;
+	Employee(string id, string firstname, string lastname, int casual, int earned, int official) :user(id, firstname, lastname) {
+		// Iniialing all interfaces with objects
+
+		leaves = new leaveRecord(casual, earned, official);
 		leaveInterface = new leaveService();
-		reportInterface = new report();
+		leaveReport = new leaveReports();
+		attendanceReport = new AttendanceReports(id);
+	}
+
+	// Function to get leave balance
+	int getBalance(int type) {
+		// Calling function of leave record class to get balance of specific leave type
+		return leaves->getBalance(type);
+	}
+
+	// Function to decrement leave balance of employee
+	void decBalance(int count, int type) {
+		// Calling function of leave record to decrement leave balance
+		leaves->decBalance(count, type);
+	}
+
+	// Function to increment leave balance of employee
+	void incBalance(int count, int type) {
+		// Calling function of leave record to decrement leave balance
+		leaves->addBalance(count, type);
 	}
 
 	// Function to display menu for employee
@@ -203,217 +64,266 @@ public:
 		int choice = 0;
 		do {
 			system("CLS");
+			// Display all functions that employee can perfrom
 			cout << "Employee Menu" << endl << endl
 				<< "1- Employee Details" << endl
 				<< "2- Attendence Details" << endl
 				<< "3- Apply Leave" << endl
-				<< "4- Logout" << endl;
-			choice = validInput(1, 4);
+				<< "4- Cancel Leave" << endl
+				<< "5- View Leave Details" << endl
+				<< "6- Logout" << endl;
+			// Get choice of employee between 1 and 5
+			choice = validInput(1, 6);
+
+			// Display details of employee
 			if (choice == 1)
-				this->getDetails();			// Get details of employee
+				this->getDetails();
+			// Attendance report interface calling function to display own attendance records
 			else if (choice == 2)
-				reportInterface->viewEmployeeAttendance(this->id);		// View own attendance records
+				attendanceReport->viewEmployeeAttendance(this->id);
+			// Leave service interface calling function to apply for a leave
 			else if (choice == 3)
-				leaveInterface->applyLeave(id);		// Apply for the leave
-		} while (choice != 4);
+				leaveInterface->applyLeave(this);
+			// Leave service interface calling function to cancel for a leave
+			else if (choice == 4)
+				leaveInterface->cancelLeave(this);
+			// Leave record interface calling function to display balance of employee leaves
+			// Leave report interface calling function to display own leaves records
+			else if (choice == 5) {
+				leaves->print();
+				leaveReport->viewLeaveRecord(id);
+			}
+		} while (choice != 6);
+		// Update balance of employee when logout
+		userFileHandling::updateBalance(this);
 	}
 };
 
 // Supervisor class implementation
 class Supervisor : public user {
-	reportInterfaceSupervisor* reportInterface;		// Report interafce for supervisor
+	// Attendance report interface to generate different attendance reports
+	AttendanceReportAuthorityI* attendaceReport;
+	// Leave report interface to generate differnet leave reports
+	leaveReportsSupervisorI* leaveReport;
+	// Leave service interface to approve or reject leave applications
 	leaveInterfaceSupervisor* leaveInterface;
 
 	// Functoin to get details of supervisor
 	void getDetails() {
 		system("CLS");
 		cout << "Supervisor Details" << endl << endl;
+		// Calling function of parent class
 		user::getDetails();
 		system("Pause");
 	}
 public:
 	// Supervisor default constructor
-	Supervisor(string id = "NA",string first = "NA",string last = "NA") : user(id,first,last){
-		reportInterface = new report();
+	Supervisor(string id = "NA", string first = "NA", string last = "NA") : user(id, first, last) {
+		// Initializing all interfaces with objects
+		
+		attendaceReport = new AttendanceReports();
+		leaveReport = new leaveReports();
 		leaveInterface = new leaveService();
 	}
+
+	// These function were required since parent class have pure virtual functions which need to be override
+
+	// No functionality in this class
+	int getBalance(int type) { return 0; }
+	void decBalance(int count, int type) {	}
+	void incBalance(int count, int type) {	}
 
 	// Function to display menu for supervisor
 	void menu() {
 		int choice = 0;
 		do {
 			system("CLS");
+			// Display of supervisor actions
 			cout << "Supervisor Menu" << endl << endl
-				<< "1- Guard Details" << endl
+				<< "1- Supervisor Details" << endl
 				<< "2- Specific Employee Attendance Record" << endl
-				<< "3- Process Leave Application" << endl
-				<< "4- View Outstanding Leaves" << endl
-				<< "5- Logout" << endl;
-			choice = validInput(1, 5);
+				<< "3- View Employee with Less Attendance (Weekly)" << endl
+				<< "4- View Employee with Less Attendance (Monthly)" << endl
+				<< "5- Process Leave Application" << endl
+				<< "6- View Outstanding Leaves" << endl
+				<< "7- Logout" << endl;
+			// Input of choice between 1 and 7
+			choice = validInput(1, 7);
+			// Function to display supervisor detials
 			if (choice == 1)
-				this->getDetails();							// Get supervisor details
+				this->getDetails();
+			// Attendance report interface calling function to view employee attendance records
+			// Any employee all attendance records
 			else if (choice == 2)
-				reportInterface->viewEmployeeAttendance();	// View employee attendance 
-			else if (choice == 3) {
-				reportInterface->viewPendingLeaveSupervisor();	// Show supervisor which leaves are outstanding so he can process
-				leaveInterface->processLeaveSuper();		// Process leave applications
-			}
+				attendaceReport->viewEmployeeAttendance();
+			// Attendance report interface calling function to view employee attendance records
+			// Only employees who havenot completed 40 hours in a week
+			else if (choice == 3)
+				attendaceReport->viewEmployeeLessAttendance();
+			// Attendance report interface calling function to view employee attendance records
+			// Only employees who havenot attendance upto specified percentage for a specific month
 			else if (choice == 4)
-				reportInterface->viewPendingLeaveSupervisor(); // View supervisor outstanding leaves
-		} while (choice != 5);
+				attendaceReport->viewEmployeeMonthlyAttendance();
+			// Leave service interface calling function to process leave applications that are under review by supervisor
+			else if (choice == 5)
+				leaveInterface->processLeaveSupervisor();
+			// Leave report interface calling function to view all leaves that are under review by supervisor
+			// Considering it as outstanding leaves
+			else if (choice == 6)
+				leaveReport->viewOutstandingLeavesSupervisor();
+		} while (choice != 7);
 	}
 };
 
- //Director class implementation
+//Director class implementation
 class Director : public user {
-	reportInterfaceDirector* reportInterface;		// Report interface for director
+	// Attendance report interface to view attendance related reports
+	AttendanceReportAuthorityI* attendanceReport;
+	// Leave report interface to view leave related reports
+	leaveReportsDirectorI* leaveReport;
+	// Leave service interface to process leave applications
+	leaveInterfaceDirector* leaveInterface;
 
 	// Functoin to get details of director
 	void getDetails() {
 		system("CLS");
 		cout << "Director Details" << endl << endl;
+		// Calling function of parent class
 		user::getDetails();
 		system("Pause");
 	}
 public:
 	// Director default constructor
 	Director(string id = "NA", string first = "NA", string last = "NA") : user(id, first, last) {
-		reportInterface = new report();
+		// Initializing interfaces with objects
+		
+		attendanceReport = new AttendanceReports();
+		leaveReport = new leaveReports();
+		leaveInterface = new leaveService();
 	}
+
+	// No functionality in this class
+	int getBalance(int type) { return 0; }
+	void decBalance(int count, int type) {	}
+	void incBalance(int count, int type) {	}
 
 	// Function to display menu for director
 	void menu() {
 		int choice = 0;
 		do {
 			system("CLS");
+			// Displaying all functions director can perform
 			cout << "Director Menu" << endl << endl
 				<< "1- Director Details" << endl
 				<< "2- Specific Employee Attendance Record" << endl
-				<< "3- Logout" << endl;
-			choice = validInput(1, 3);
+				<< "3- View Employee with Less Attendance (Weekly)" << endl
+				<< "4- View Employee with Less Attendance (Monthly)" << endl
+				<< "5- Process Leave Applications" << endl
+				<< "6- View Outstanding Leaves" << endl
+				<< "7- Logout" << endl;
+			// Input of choice of director between 1 and 7
+			choice = validInput(1, 7);
+			// Fucntion to display detials of supervisor
 			if (choice == 1)
-				this->getDetails();						// Get guard details
+				this->getDetails();
+			// Attendance report interface calling function to view employee attendance records
+			// Any employee all attendance records
 			else if (choice == 2)
-				reportInterface->viewEmployeeAttendance();
-		} while (choice != 3);
+				attendanceReport->viewEmployeeAttendance();
+			// Attendance report interface calling function to view employee attendance records
+			// Only employees who havenot completed 40 hours in a week
+			else if (choice == 3)
+				attendanceReport->viewEmployeeLessAttendance();
+			// Attendance report interface calling function to view employee attendance records
+			// Only employees who havenot attendance upto specified percentage for a specific month
+			else if (choice == 4)
+				attendanceReport->viewEmployeeMonthlyAttendance();
+			// Leave service interface calling function to process leave applications that are under review by director
+			else if (choice == 5)
+				leaveInterface->processLeaveDirector();
+			// Leave report interface calling function to view all leaves that are under review by director
+			// Considering it as outstanding leaves
+			else if (choice == 6)
+				leaveReport->viewOutstandingLeavesDirector();
+		} while (choice != 7);
 	}
 };
 
 // Guard class implementation
 class Guard : public user {
-	attendanceService* attendanceInterface;
+	// Attendance service interface to mark attendance
+	AttendanceServiceGuardI* attendanceInterface;
 
 	// Functoin to get details of guard
 	void getDetails() {
 		system("CLS");
 		cout << "Guard Details" << endl << endl;
+		// Calling parent class function
 		user::getDetails();
 		system("Pause");
 	}
 public:
 	// Deafult constructor of guard
 	Guard(string id = "NA", string firstname = "NA", string lastname = "NA") :user(id, firstname, lastname) {
-		attendanceInterface = new attendanceService(id);
+		// Initializing interface with objects
+
+		attendanceInterface = new AttendanceService();
 	}
-	
+
+	// These function were required since parent class have pure virtual functions which need to be override
+
+	// No functionality in this class
+	int getBalance(int type) { return 0; }
+	void decBalance(int count, int type) {	}
+	void incBalance(int count, int type) {	}
+
 	// Function to display menu for guard
 	void menu() {
 		int choice = 0;
 		do {
 			system("CLS");
+			// Displaying all fucntions guard can perform
 			cout << "Guard Menu" << endl << endl
 				<< "1- Guard Details" << endl
 				<< "2- Mark Attendence" << endl
 				<< "3- Logout" << endl;
+			// Input of guard choice between 1 and 3
 			choice = validInput(1, 3);
+			// Function to display guard details
 			if (choice == 1)
-				this->getDetails();						// Get guard details
+				this->getDetails();
+			// Attendace service interface calling fucniton to mark attendance to employees
 			else if (choice == 2)
-				attendanceInterface->markAttendance();	// Mark attendance of employee
+				attendanceInterface->markAttendanceGuard(this->getID());
 		} while (choice != 3);
+
 	}
 };
 
-// Current user (employee or guard)
-user* current;
-
-// User login functionality and choosing the user who logged in
-bool login() {
-	system("CLS");
-	cout << "User must Login to continue" << endl << endl;
-
-	// User credential input
-	string userid, userpass;
-	cout << "Enter user id : ";
-	cin >> userid;
-	cout << "Enter password : ";
-	cin >> userpass;
-
-
+// User login functionality
+// Current user pointer to store object of employee, supervisor, director or guard according to userid and pass
+// String userid and pass consist of id and password against that id entered by user to login
+bool login(user*& current, string userid, string userpass) {
 	bool flag = false;
-	// Checking if employee exist
+	// Check if id is of employee
 	if (userid[0] == 'e') {
+		// Temporary variables to read data from file
 		string id, pass, first, last;
-		int casual, earned, official, unpaid;
+		int casual, earned, official;
+		// Open employee file in reading mode
 		ifstream read("Employee.txt");
 		if (read.is_open()) {
+			// Loop untill we reach end of eof or employee is found
 			while (!read.eof() && !flag) {
-				read >> id >> pass >> first >> last >> casual >> earned >> official >> unpaid;
-				if (userid == id && userpass == pass)		// If employee entered correct username and password
+				// Read file data in temporary variables
+				read >> id >> pass >> first >> last >> casual >> earned >> official;
+				// If user entered id and password match any of employee record
+				if (userid == id && userpass == pass)		
 				{
+					// To break loop
 					flag = true;
-					current = new Employee(id, first, last, casual, earned, official, unpaid);			// Create employee object as user
-				}
-			}
-		}
-		else
-			cout << "File Not Found!" << endl;
-		read.close();
-	} // Checking if guard exist
-	else if (userid[0] == 'g') {
-		string id, pass, first, last;
-		ifstream read("Guard.txt");
-		if (read.is_open()) {
-			while (!read.eof() && !flag) {
-				read >> id >> pass >> first >> last;
-				if (userid == id && userpass == pass)		// If guard entered correct username and password
-				{
-					flag = true;
-					current = new Guard(id, first, last);		// Create guard object as user
-				}
-			}
-		}
-		else
-			cout << "File Not Found!" << endl;
-		read.close();
-	} // Checking if supervisor exist
-	else if (userid[0] == 's') {
-		string readid, readpass, first, last;
-		ifstream read("Supervisor.txt");
-		if (read.is_open()) {
-			while (!read.eof() && !flag) {
-				read >> readid >> readpass >> first >> last;
-				if (userid == readid && userpass == readpass)		// If supervisor entered correct username and password
-				{
-					flag = true;
-					current = new Supervisor(readid, first, last);	// Create supervisor object as user
-				}
-			}
-		}
-		else
-			cout << "File Not Found!" << endl;
-		read.close();
-	} // Checking if director exist
-	else if (userid[0] == 'd') {
-		string readid, readpass, first, last;
-		ifstream read("Director.txt");
-		if (read.is_open()) {
-			while (!read.eof() && !flag) {
-				read >> readid >> readpass >> first >> last;
-				if (userid == readid && userpass == readpass)		// If employee entered correct username and password
-				{
-					flag = true;
-					current = new Director(readid, first, last);	// Create director object as user
+					// Create employee object as current user
+					current = new Employee(id, first, last, casual, earned, official);
 				}
 			}
 		}
@@ -421,19 +331,115 @@ bool login() {
 			cout << "File Not Found!" << endl;
 		read.close();
 	}
+	// Check if id is of guard
+	else if (userid[0] == 'g') {
+		// Temporary variables to read data from file
+		string id, pass, first, last;
+		// Open guard file in reading mode
+		ifstream read("Guard.txt");
+		if (read.is_open()) {
+			// Loop untill we reach end of eof or guard is found
+			while (!read.eof() && !flag) {
+				// Read file data in temporary variables
+				read >> id >> pass >> first >> last;
+				// If user entered id and password match any of employee record
+				if (userid == id && userpass == pass)
+				{
+					// To break loop
+					flag = true;
+					// Create employee guard as current user
+					current = new Guard(id, first, last);
+				}
+			}
+		}
+		else
+			cout << "File Not Found!" << endl;
+		read.close();
+	}
+	// Check if id is of supervisor
+	else if (userid[0] == 's') {
+		// Temporary variables to read data from file
+		string readid, readpass, first, last;
+		// Open supervisor file in reading mode
+		ifstream read("Supervisor.txt");
+		if (read.is_open()) {
+			// Loop untill we reach end of eof or supervisor is found
+			while (!read.eof() && !flag) {
+				// Read file data in temporary variables
+				read >> readid >> readpass >> first >> last;
+				// If user entered id and password match any of employee record
+				if (userid == readid && userpass == readpass)
+				{
+					// To break loop
+					flag = true;
+					// Create employee object as current user
+					current = new Supervisor(readid, first, last);
+				}
+			}
+		}
+		else
+			cout << "File Not Found!" << endl;
+		read.close();
+	}
+	// Check if id is of director
+	else if (userid[0] == 'd') {
+		// Temporary variables to read data from file
+		string readid, readpass, first, last;
+		// Open director file in reading mode
+		ifstream read("Director.txt");
+		if (read.is_open()) {
+			// Loop untill we reach end of eof or director is found
+			while (!read.eof() && !flag) {
+				// Read file data in temporary variables
+				read >> readid >> readpass >> first >> last;
+				// If user entered id and password match any of employee record
+				if (userid == readid && userpass == readpass)
+				{
+					// To break loop
+					flag = true;
+					// Create employee object as current user
+					current = new Director(readid, first, last);
+				}
+			}
+		}
+		else
+			cout << "File Not Found!" << endl;
+		read.close();
+	}
+	// Return true if any user with argument is found
+	// Return false if id and password doesnot match any user
 	return flag;
 }
 
+// Main fucntionality
 int main()
 {
+	// Current user how is going to use system
+	// Employee, guard, supervisor or director
+	user* current = nullptr;
+	
 	cout << "Welcome to Attendence Management System" << endl;
-	system("Pause");
 
-	while (!login()) {
-		cout << "Invalid Credentials" << endl;
-		system("Pause");
+	// User must login into system to use it
+	cout << "User must Login to continue" << endl << endl;
+	bool flag = false;
+	// Loop until user login with correct credentials
+	while (!flag) {
+		// User credential input
+		string userid, userpass;
+		cout << "Enter user id : ";
+		cin >> userid;
+		cout << "Enter password : ";
+		cin >> userpass;
+		// Function that initialze current* with specified object depending on the id and password passed
+		flag = login(current, userid, userpass);
+		// If login return false it means either there is no match for user id
+		// Or password entered is wrong
+		if (!flag)
+			cout << "User not found" << endl;
 	}
 
+	// Display menu to user according to its type
 	current->menu();
 
 	return 0;

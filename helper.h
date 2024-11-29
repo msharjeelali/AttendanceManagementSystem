@@ -1,3 +1,5 @@
+#pragma once
+
 #include<iostream>
 #include<string>
 #include<string>
@@ -15,9 +17,8 @@ int validInput(int start, int end) {
 		}
 	} while (choice< start || choice > end);	// Loop untill input is not in range
 	return choice;
-}
 
-#pragma once
+}
 class Date
 {
 	int day;	// Store numeric date
@@ -81,6 +82,36 @@ public:
 		return false;
 	}
 
+	// Function to get week day from date object
+	string getDay() const {
+		int t_year = year, t_month = month, t_day = day;
+		string weekday[7] = { "Sun","Mon", "Tues", "Wed", "Thur", "Fri", "Sat"};
+		static int t[] = { 0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4 };
+		if (t_month < 3) {
+			t_year -= 1; // Previous year for Jan and Feb
+			t_month += 12; // Treat Jan and Feb as 13 and 14
+
+		}
+		int index = (t_year + t_year / 4 - t_year / 100 + t_year / 400 + t[t_month - 1] + t_day) % 7;
+
+		return weekday[index];
+	}
+
+	// Function to get month of date
+	int getMonth()const {
+		return month;
+	}
+
+	// Function to determine week range from Date provided
+	static Date getWeekRange(Date date, string day) {
+		vector<string>weekday{ "Mon", "Tues", "Wed", "Thur", "Fri" };
+		int index = find(weekday.begin(), weekday.end(), day) - weekday.begin() + 1;
+
+		// Calculate week start and end dates to group them weekly
+		Date rangefrom = date - index;
+		return rangefrom;
+	}
+
 	// Overloading plus operator to calcualte ranges of week in weekly report
 	Date operator + (int day) const {
 		Date result = *this;
@@ -115,6 +146,14 @@ public:
 		}
 
 		return result;
+	}
+
+	// Function to get number of days between two dates
+	int getDiff(Date obj) {
+		int count = 0;
+		for (Date i = *this; i > obj || i == obj; i = i - 1)
+			count++;
+		return count;
 	}
 
 	// Overloading greater than operator to check if calling object is greater (ahead date) than passed object
@@ -157,7 +196,7 @@ public:
 	// Overloading cout operaotor to print date in specific format on console
 	friend ostream& operator << (ostream& out, const Date& today) {
 		if (today.day == 0 && today.month == 0)
-			out << "TBD";
+			out << "NotAvailable";
 		else
 			out << today.day << "/" << today.month << "/" << today.year;
 		return out;
@@ -243,6 +282,14 @@ public:
 	// Function to comapre to time objects
 	bool compare(Time obj) const{
 		return (min == obj.min) && (hour == obj.hour);
+	}
+
+	// Function to get hours from time to calculate weekly report
+	int getHours()const {
+		float sum = 0;
+		sum += this->hour;
+		sum += float(this->min / 60);
+		return sum;
 	}
 
 	// Function to check validity of time i.e. whether entry time entered is earlier than exit time

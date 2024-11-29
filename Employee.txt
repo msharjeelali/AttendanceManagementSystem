@@ -1,5 +1,5 @@
-emp000asad asad000 Asad Ali 15 21 0 0
-emp001ahmad ahmad001 Muhammad Ahmad 15 21 0 0
-emp002ali ali002 Ali Yousaf 15 21 0 0
-emp003fatima fatima003 Fatima Akbar 15 21 0 0
-emp004wasif wasif004 Wasid Shah 15 21 0 0
+emp000asad asad000 Asad Ali 15 19 1
+emp001ahmad ahmad001 Muhammad Ahmad 15 18 0
+emp002ali ali002 Ali Yousaf 14 22 1
+emp003fatima fatima003 Fatima Akbar 14 21 0
+emp004wasif wasif004 Wasif Shah 15 15 0

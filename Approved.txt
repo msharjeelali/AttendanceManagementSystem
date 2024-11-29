@@ -1,0 +1,7 @@
+casual 3 emp002ali 13/11/2024 13/11/2024 23/11/2024 NotAvailable Lahore  abc
+casual 1 emp003fatima 7/11/2024 7/11/2024 24/11/2024 NotAvailable abc  xyz
+official 5 emp000asad 31/10/2024 31/10/2024 25/11/2024 NotAvailable abc  xyz
+official 12 emp002ali 14/11/2024 14/11/2024 26/11/2024 NotAvailable qwe  rty
+unpaid 7 emp002ali 4/11/2024 8/11/2024 25/11/2024 NotAvailable asd fgh
+earned 11 emp004wasif 4/11/2024 8/11/2024 26/11/2024 NotAvailable abc xyz
+earned 6 emp001ahmad 30/10/2024 1/11/2024 25/11/2024 NotAvailable asd  bnm
