@@ -32,10 +32,10 @@ class Employee : public user {
 
 public:
 	// Deafult constructor of employee
-	Employee(string id, string firstname, string lastname, int casual, int earned, int official) :user(id, firstname, lastname) {
+	Employee(string id, string firstname, string lastname, int casual, int earned, int official,int year) :user(id, firstname, lastname) {
 		// Iniialing all interfaces with objects
 
-		leaves = new leaveRecord(casual, earned, official);
+		leaves = new leaveRecord(casual, earned, official,year);
 		leaveInterface = new leaveService();
 		leaveReport = new leaveReports();
 		attendanceReport = new AttendanceReports(id);
@@ -59,6 +59,46 @@ public:
 		leaves->addBalance(count, type);
 	}
 
+	// Function to display notifications to employee
+	void viewNotifications() {
+		vector<string> buffer;
+		// Open notification file in read mode
+		ifstream read("Notify.txt");
+		if (read.is_open()) {
+			string temp;
+			// Read text from file
+			while (getline(read, temp)) {
+				stringstream ss(temp);
+				string id;
+				ss >> id;
+				// If notification is for current employee
+				if (id == this->id) {
+					string leaveid, message = "";
+					ss >> leaveid;
+					while (ss >> temp)
+						message += temp + " ";
+					cout << "Your applicaion against leave id " << leaveid << " is " << message << endl;
+				}
+				// If notification is not for the employee than push it in buffer to write it back in file
+				else
+					buffer.push_back(temp);
+			}
+		}
+		else
+			cout << "Notifications file could not open" << endl;
+		read.close();
+		// Open file in write mode to wrire all other notifications back
+		ofstream write("Notify.txt");
+		if (write.is_open()) {
+			// Write all the noifications back in the file
+			for (auto ite : buffer)
+				write << ite << endl;
+		}
+		else
+			cout << "Notification file could not open" << endl;
+		system("pause");
+	}
+
 	// Function to display menu for employee
 	void menu() {
 		int choice = 0;
@@ -71,9 +111,10 @@ public:
 				<< "3- Apply Leave" << endl
 				<< "4- Cancel Leave" << endl
 				<< "5- View Leave Details" << endl
-				<< "6- Logout" << endl;
+				<< "6- Notifications" << endl
+				<< "7- Logout" << endl;
 			// Get choice of employee between 1 and 5
-			choice = validInput(1, 6);
+			choice = validInput(1, 7);
 
 			// Display details of employee
 			if (choice == 1)
@@ -92,8 +133,12 @@ public:
 			else if (choice == 5) {
 				leaves->print();
 				leaveReport->viewLeaveRecord(id);
+				system("pause");
 			}
-		} while (choice != 6);
+			// View notifications related to leaves
+			else if (choice == 6)
+				viewNotifications();
+		} while (choice != 7);
 		// Update balance of employee when logout
 		userFileHandling::updateBalance(this);
 	}
@@ -146,9 +191,10 @@ public:
 				<< "4- View Employee with Less Attendance (Monthly)" << endl
 				<< "5- Process Leave Application" << endl
 				<< "6- View Outstanding Leaves" << endl
-				<< "7- Logout" << endl;
+				<< "7- View Employee Leave Balance and Records" << endl
+				<< "8- Logout" << endl;
 			// Input of choice between 1 and 7
-			choice = validInput(1, 7);
+			choice = validInput(1, 8);
 			// Function to display supervisor detials
 			if (choice == 1)
 				this->getDetails();
@@ -171,7 +217,10 @@ public:
 			// Considering it as outstanding leaves
 			else if (choice == 6)
 				leaveReport->viewOutstandingLeavesSupervisor();
-		} while (choice != 7);
+			// Leave report interafce calling function to view any employee leave balance and leave records
+			else if (choice == 7)
+				leaveReport->viewLeaveRecord();
+		} while (choice != 8);
 	}
 };
 
@@ -220,9 +269,10 @@ public:
 				<< "4- View Employee with Less Attendance (Monthly)" << endl
 				<< "5- Process Leave Applications" << endl
 				<< "6- View Outstanding Leaves" << endl
-				<< "7- Logout" << endl;
+				<< "7- View Employee Leave Balance and Record" << endl
+				<< "8- Logout" << endl;
 			// Input of choice of director between 1 and 7
-			choice = validInput(1, 7);
+			choice = validInput(1, 8);
 			// Fucntion to display detials of supervisor
 			if (choice == 1)
 				this->getDetails();
@@ -245,7 +295,10 @@ public:
 			// Considering it as outstanding leaves
 			else if (choice == 6)
 				leaveReport->viewOutstandingLeavesDirector();
-		} while (choice != 7);
+			// Leave report interafce calling function to view any employee leave balance and leave records
+			else if (choice == 7)
+				leaveReport->viewLeaveRecord();
+		} while (choice != 8);
 	}
 };
 
@@ -309,21 +362,21 @@ bool login(user*& current, string userid, string userpass) {
 	if (userid[0] == 'e') {
 		// Temporary variables to read data from file
 		string id, pass, first, last;
-		int casual, earned, official;
+		int casual, earned, official,year;
 		// Open employee file in reading mode
 		ifstream read("Employee.txt");
 		if (read.is_open()) {
 			// Loop untill we reach end of eof or employee is found
 			while (!read.eof() && !flag) {
 				// Read file data in temporary variables
-				read >> id >> pass >> first >> last >> casual >> earned >> official;
+				read >> id >> pass >> first >> last >> casual >> earned >> official >> year;
 				// If user entered id and password match any of employee record
 				if (userid == id && userpass == pass)		
 				{
 					// To break loop
 					flag = true;
 					// Create employee object as current user
-					current = new Employee(id, first, last, casual, earned, official);
+					current = new Employee(id, first, last, casual, earned, official,year);
 				}
 			}
 		}

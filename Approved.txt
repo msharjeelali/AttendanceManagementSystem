@@ -5,3 +5,4 @@ official 12 emp002ali 14/11/2024 14/11/2024 26/11/2024 NotAvailable qwe  rty
 unpaid 7 emp002ali 4/11/2024 8/11/2024 25/11/2024 NotAvailable asd fgh
 earned 11 emp004wasif 4/11/2024 8/11/2024 26/11/2024 NotAvailable abc xyz
 earned 6 emp001ahmad 30/10/2024 1/11/2024 25/11/2024 NotAvailable asd  bnm
+casual 14 emp000asad 18/11/2024 19/11/2024 29/11/2024 NotAvailable abc  xyz

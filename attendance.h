@@ -130,6 +130,7 @@ public:
 				if (object.empid == empid || empid == "default")
 					record.push_back(object);
 			}
+			read.close();
 		}
 		else
 			cout << "Unable to open Attendance file!" << endl;
@@ -154,6 +155,7 @@ public:
 				if (object.empid == empid && object.date == date)
 					flag = true;
 			}
+			read.close();
 		}
 		else
 			cout << "Unable to open Attendance file!" << endl;
@@ -224,7 +226,7 @@ public:
 						flag = true;
 					// Check if date entered is of Saturday or Sunday
 					// Cannot mark attendance of Saturday and Sunday
-					if (recordDate.getDay() == "Sun" or recordDate.getDay() == "Sat") {
+					if (recordDate.getDay() == "Sun" || recordDate.getDay() == "Sat") {
 						flag = false;
 						cout << "You are marking attendance of weekend which is not allowed" << endl;
 					}
@@ -295,7 +297,7 @@ public:
 	// Function to mark attendance of employee when leave application is approved
 	void markAttendanceLeave(string empid, Date from, Date till) {
 		// Loop for each date of approved leave application
-		for (Date i = from; i < till or i == till; i = i + 1) {
+		for (Date i = from; i < till || i == till; i = i + 1) {
 			// If day is not Saturday or Sunday
 			if (i.getDay() != "Sun" && i.getDay() != "Sat") {
 				// Create attendance object of that date

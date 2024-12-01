@@ -55,3 +55,5 @@ emp004wasif NotAvailalbe 8/11/2024 9:0 17:0 Leave
 emp001ahmad NotAvailable 30/10/2024 9:0 17:0 Leave
 emp001ahmad NotAvailable 31/10/2024 9:0 17:0 Leave
 emp001ahmad NotAvailable 1/11/2024 9:0 17:0 Leave
+emp000asad NotAvailable 18/11/2024 9:0 17:0 Leave
+emp000asad NotAvailable 19/11/2024 9:0 17:0 Leave

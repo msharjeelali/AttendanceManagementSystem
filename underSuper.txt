@@ -1,0 +1,2 @@
+casual 15 emp001ahmad 18/11/2024 18/11/2024 30/11/2024 abc  xyz
+earned 16 emp002ali 21/11/2024 22/11/2024 30/11/2024 abc  xyz
